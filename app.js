@@ -3,10 +3,15 @@ const jsonfile = require('jsonfile')
 const lighthouse = require('lighthouse');
 const chromeLauncher = require('chrome-launcher');
 
+//config
+const GENERATE_NEW_REPORT = false;
+const OUTPUT_DIRECTORY_NAME = 'reports';
+//----------------------------------------------------------
+
+
 const readFile = (filePath) => {
     return fs.readFileSync(filePath, 'utf8').split('\r\n');
 }
-
 
 const lighthouseCheck = async ({data, newReport = true}) => {
     let scoresArray = [];
@@ -42,18 +47,22 @@ const lighthouseCheck = async ({data, newReport = true}) => {
         console.log('Performance score was', runnerResult.lhr.categories.performance.score * 100);
         await chrome.kill();
     }
-
+    if (!fs.existsSync(`./${OUTPUT_DIRECTORY_NAME}`)) {
+        fs.mkdirSync(`./${OUTPUT_DIRECTORY_NAME}`);
+    }
     const date = new Date();
-    const formattedDate = `${date.getHours()}:${date.getMinutes()}_${date.getDate()}/${date.getMonth()}/${date.getFullYear()}`
+    let formattedDate = `${date.getHours()}:${date.getMinutes()}_${date.getDate()}/${date.getMonth()}/${date.getFullYear()}`
     if (!newReport) {
         prevData[formattedDate] = scoresArray;
         // console.log(prevData)
-        jsonfile.writeFileSync('./report.json', prevData, {space: 2/*, flag: 'a'*/});
+        jsonfile.writeFileSync(`./${OUTPUT_DIRECTORY_NAME}/report.json`, prevData, {space: 2/*, flag: 'a'*/});
         return;
     }
 
     //generate new report
-    jsonfile.writeFileSync(`./report_${formattedDate.replace(';', 'I')}.json`, scoresArray, {space: 2/*, flag: 'a'*/});
+    formattedDate = `${date.getHours()}H_${date.getMinutes()}M_${date.getDate()}D_${date.getMonth()}M_${date.getFullYear()}Y`.toLowerCase()
+    // console.log(formattedDate)
+    jsonfile.writeFileSync(`./${OUTPUT_DIRECTORY_NAME}/report_${formattedDate}.json`, scoresArray, {space: 2/*, flag: 'a'*/});
 
 
 }
@@ -61,7 +70,7 @@ const lighthouseCheck = async ({data, newReport = true}) => {
 
 const data = readFile('./urls.txt');
 
-lighthouseCheck({data, newReport: true}).then(() => {
+lighthouseCheck({data, newReport: GENERATE_NEW_REPORT}).then(() => {
     console.log('done')
 }).catch(err => console.log(err));
 
