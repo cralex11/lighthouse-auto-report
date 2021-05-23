@@ -8,7 +8,7 @@ const GENERATE_NEW_REPORT = true;
 const OUTPUT_DIRECTORY_NAME = 'reports';
 //All options: json, txt, html
 //For this option GENERATE_NEW_REPORT should be true!!!
-const OUTPUT_OPTION = 'html';
+const OUTPUT_OPTION = 'txt';
 //----------------------------------------------------------
 
 const date = new Date();
