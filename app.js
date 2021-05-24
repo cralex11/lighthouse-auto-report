@@ -16,7 +16,7 @@ const dirName = `${date.getHours()}H_${date.getMinutes()}M_${date.getDate()}D_${
 let index = 1;
 
 const readFile = (filePath) => {
-    return fs.readFileSync(filePath, 'utf8').split(process.platform==="win32"?'\r\n':'\n');
+    return fs.readFileSync(filePath, 'utf8').split(process.platform === "win32" ? '\r\n' : '\n');
 }
 
 const lighthouseCheck = async ({data, newReport = true}) => {
@@ -65,7 +65,15 @@ const lighthouseCheck = async ({data, newReport = true}) => {
         const speedIndex = runnerResult.lhr.audits['speed-index'].displayValue
         const cumulativeLayoutShift = runnerResult.lhr.audits['cumulative-layout-shift'].displayValue
 
-        scoresArray.push({[url]: {score, firstContentfulPaint, largestContentfulPaint, speedIndex,cumulativeLayoutShift}});
+        scoresArray.push({
+            [url]: {
+                score,
+                firstContentfulPaint,
+                largestContentfulPaint,
+                speedIndex,
+                cumulativeLayoutShift
+            }
+        });
         // `.lhr` is the Lighthouse Result as a JS object
         console.log('\n\nReport is done for', runnerResult.lhr.finalUrl);
         console.log('Performance score was', runnerResult.lhr.categories.performance.score * 100);
@@ -88,7 +96,7 @@ const lighthouseCheck = async ({data, newReport = true}) => {
     switch (OUTPUT_OPTION) {
         case "txt": {
             let formattedResult = '';
-            scoresArray.forEach(el => Object.entries(el).forEach(([key, val]) => formattedResult += `\n________________________\nSite: ${key}\nScore: ${val['score']} \nfirstContentfulPaint: ${parseFloat(val['firstContentfulPaint'])}s \nlargestContentfulPaint: ${parseFloat(val['largestContentfulPaint'])}s \nspeedIndex: ${parseFloat(val['speedIndex'])}s \ncumulativeLayoutShift: ${parseFloat(val['cumulativeLayoutShift'])}\n`))
+            scoresArray.forEach(el => Object.entries(el).forEach(([key, val]) => formattedResult += `\n${showNUnderscore(key.length + 6 + key.length * 0.1)}\nSite: ${key}\nScore: ${val['score']} \nfirstContentfulPaint: ${parseFloat(val['firstContentfulPaint'])}s \nlargestContentfulPaint: ${parseFloat(val['largestContentfulPaint'])}s \nspeedIndex: ${parseFloat(val['speedIndex'])}s \ncumulativeLayoutShift: ${parseFloat(val['cumulativeLayoutShift'])}\n`))
 
             console.log("\n" + formattedResult)
             fs.writeFileSync(`./${OUTPUT_DIRECTORY_NAME}/report.txt`, formattedResult);
@@ -110,6 +118,7 @@ const lighthouseCheck = async ({data, newReport = true}) => {
 
 
 const data = readFile('./urls.txt');
+const showNUnderscore = n => '_'.repeat(n)
 
 lighthouseCheck({data, newReport: GENERATE_NEW_REPORT}).then(() => {
     console.log('done')
