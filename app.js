@@ -60,7 +60,11 @@ const lighthouseCheck = async ({data, newReport = true}) => {
         }
 
         const score = runnerResult.lhr.categories.performance.score * 100;
-        scoresArray.push({[url]: {score}});
+        const firstContentfulPaint = runnerResult.lhr.audits['first-contentful-paint'].displayValue
+        const largestContentfulPaint = runnerResult.lhr.audits['largest-contentful-paint'].displayValue
+        const speedIndex = runnerResult.lhr.audits['speed-index'].displayValue
+
+        scoresArray.push({[url]: {score, firstContentfulPaint, largestContentfulPaint, speedIndex}});
 
         // `.lhr` is the Lighthouse Result as a JS object
         console.log('\n\nReport is done for', runnerResult.lhr.finalUrl);
@@ -83,10 +87,12 @@ const lighthouseCheck = async ({data, newReport = true}) => {
     // console.log(formattedDate)
     switch (OUTPUT_OPTION) {
         case "txt": {
-            let formatterResult = '';
-            scoresArray.forEach(el => Object.entries(el).forEach(([key, val]) => formatterResult += `Site: ${key} Score: ${val['score']}\n`))
-            console.log("\n" + formatterResult)
-            fs.writeFileSync(`./${OUTPUT_DIRECTORY_NAME}/report.txt`, formatterResult);
+            let formattedResult = '';
+            scoresArray.forEach(el => Object.entries(el).forEach(([key, val]) => formattedResult += `Site: ${key} Score: ${val['score']} firstContentfulPaint: ${val['firstContentfulPaint']} largestContentfulPaint: ${val['largestContentfulPaint']} speedIndex: ${val['speedIndex']} \n`))
+            console.log(scoresArray)
+            console.log(formattedResult)
+            console.log("\n" + formattedResult)
+            fs.writeFileSync(`./${OUTPUT_DIRECTORY_NAME}/report.txt`, formattedResult);
             break;
         }
         case "json": {
