@@ -16,7 +16,7 @@ const dirName = `${date.getHours()}H_${date.getMinutes()}M_${date.getDate()}D_${
 let index = 1;
 
 const readFile = (filePath) => {
-    return fs.readFileSync(filePath, 'utf8').split('\r\n');
+    return fs.readFileSync(filePath, 'utf8').split(process.platform==="win32"?'\r\n':'\n');
 }
 
 const lighthouseCheck = async ({data, newReport = true}) => {
@@ -45,7 +45,7 @@ const lighthouseCheck = async ({data, newReport = true}) => {
         }
         if (url.toString().trim().length < 2) continue;
 
-        const chrome = await chromeLauncher.launch({chromeFlags: ['--headless']});
+        const chrome = await chromeLauncher.launch({chromeFlags: ['--headless', '--no-sandbox']});
         const options = {/*logLevel: 'info',*/ output: 'html', onlyCategories: ['performance'], port: chrome.port};
         const runnerResult = await lighthouse(url, options);
 
@@ -63,9 +63,9 @@ const lighthouseCheck = async ({data, newReport = true}) => {
         const firstContentfulPaint = runnerResult.lhr.audits['first-contentful-paint'].displayValue
         const largestContentfulPaint = runnerResult.lhr.audits['largest-contentful-paint'].displayValue
         const speedIndex = runnerResult.lhr.audits['speed-index'].displayValue
+        const cumulativeLayoutShift = runnerResult.lhr.audits['cumulative-layout-shift'].displayValue
 
-        scoresArray.push({[url]: {score, firstContentfulPaint, largestContentfulPaint, speedIndex}});
-
+        scoresArray.push({[url]: {score, firstContentfulPaint, largestContentfulPaint, speedIndex,cumulativeLayoutShift}});
         // `.lhr` is the Lighthouse Result as a JS object
         console.log('\n\nReport is done for', runnerResult.lhr.finalUrl);
         console.log('Performance score was', runnerResult.lhr.categories.performance.score * 100);
@@ -88,7 +88,7 @@ const lighthouseCheck = async ({data, newReport = true}) => {
     switch (OUTPUT_OPTION) {
         case "txt": {
             let formattedResult = '';
-            scoresArray.forEach(el => Object.entries(el).forEach(([key, val]) => formattedResult += `Site: ${key} Score: ${val['score']} firstContentfulPaint: ${parseFloat(val['firstContentfulPaint'])}s largestContentfulPaint: ${parseFloat(val['largestContentfulPaint'])}s speedIndex: ${parseFloat(val['speedIndex'])}s \n`))
+            scoresArray.forEach(el => Object.entries(el).forEach(([key, val]) => formattedResult += `\n________________________\nSite: ${key}\nScore: ${val['score']} \nfirstContentfulPaint: ${parseFloat(val['firstContentfulPaint'])}s \nlargestContentfulPaint: ${parseFloat(val['largestContentfulPaint'])}s \nspeedIndex: ${parseFloat(val['speedIndex'])}s \ncumulativeLayoutShift: ${parseFloat(val['cumulativeLayoutShift'])}\n`))
 
             console.log("\n" + formattedResult)
             fs.writeFileSync(`./${OUTPUT_DIRECTORY_NAME}/report.txt`, formattedResult);
