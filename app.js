@@ -88,9 +88,8 @@ const lighthouseCheck = async ({data, newReport = true}) => {
     switch (OUTPUT_OPTION) {
         case "txt": {
             let formattedResult = '';
-            scoresArray.forEach(el => Object.entries(el).forEach(([key, val]) => formattedResult += `Site: ${key} Score: ${val['score']} firstContentfulPaint: ${val['firstContentfulPaint']} largestContentfulPaint: ${val['largestContentfulPaint']} speedIndex: ${val['speedIndex']} \n`))
-            console.log(scoresArray)
-            console.log(formattedResult)
+            scoresArray.forEach(el => Object.entries(el).forEach(([key, val]) => formattedResult += `Site: ${key} Score: ${val['score']} firstContentfulPaint: ${parseFloat(val['firstContentfulPaint'])}s largestContentfulPaint: ${parseFloat(val['largestContentfulPaint'])}s speedIndex: ${parseFloat(val['speedIndex'])}s \n`))
+
             console.log("\n" + formattedResult)
             fs.writeFileSync(`./${OUTPUT_DIRECTORY_NAME}/report.txt`, formattedResult);
             break;
