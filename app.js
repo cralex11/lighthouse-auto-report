@@ -3,6 +3,8 @@ const jsonfile = require('jsonfile')
 const lighthouse = require('lighthouse');
 const chromeLauncher = require('chrome-launcher');
 
+const {generateString} = require('./utils/utils.js')
+
 const constants = require('lighthouse/lighthouse-core/config/constants')
 
 //config
@@ -17,8 +19,18 @@ const date = new Date();
 const dirName = `${date.getHours()}H_${date.getMinutes()}M_${date.getDate()}D_${date.getMonth()}M_${date.getFullYear()}Y`.toLowerCase();
 let index = 1;
 
+//--------------------------
+//Functions
+
 const readFile = (filePath) => {
     return fs.readFileSync(filePath, 'utf8').split(process.platform === "win32" ? '\r\n' : '\n');
+}
+
+const checkFileName = (fileName)=>{
+    if (fs.existsSync(`./${OUTPUT_DIRECTORY_NAME}/report${fileName}.txt`))
+        return checkFileName(fileName+generateString(2));
+    return fileName
+
 }
 
 const lighthouseCheck = async ({data, newReport = true}) => {
@@ -109,7 +121,13 @@ const lighthouseCheck = async ({data, newReport = true}) => {
             scoresArray.forEach(el => Object.entries(el).forEach(([key, val]) => formattedResult += `\n${showNUnderscore(key.length + 6 + key.length * 0.1)}\nSite: ${key}\nScore: ${val['score']} \nfirstContentfulPaint: ${parseFloat(val['firstContentfulPaint'])}s \nlargestContentfulPaint: ${parseFloat(val['largestContentfulPaint'])}s \nspeedIndex: ${parseFloat(val['speedIndex'])}s \ncumulativeLayoutShift: ${parseFloat(val['cumulativeLayoutShift'])}\n`))
 
             console.log("\n" + formattedResult)
-            fs.writeFileSync(`./${OUTPUT_DIRECTORY_NAME}/report${dirName}.txt`, formattedResult);
+
+
+
+            let txtFileName = checkFileName(dirName);
+            console.log(txtFileName)
+
+            fs.writeFileSync(`./${OUTPUT_DIRECTORY_NAME}/report${txtFileName}.txt`, formattedResult);
             break;
         }
         case "json": {
@@ -130,7 +148,6 @@ const lighthouseCheck = async ({data, newReport = true}) => {
 const data = readFile('./urls.txt');
 const showNUnderscore = n => '_'.repeat(n)
 
-// console.log(process.argv)
 
 lighthouseCheck({data, newReport: GENERATE_NEW_REPORT}).then(() => {
     console.log('done')
