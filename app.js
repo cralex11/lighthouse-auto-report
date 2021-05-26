@@ -3,6 +3,8 @@ const jsonfile = require('jsonfile')
 const lighthouse = require('lighthouse');
 const chromeLauncher = require('chrome-launcher');
 
+const constants = require('lighthouse/lighthouse-core/config/constants')
+
 //config
 const GENERATE_NEW_REPORT = true;
 const OUTPUT_DIRECTORY_NAME = 'reports';
@@ -46,7 +48,15 @@ const lighthouseCheck = async ({data, newReport = true}) => {
         if (url.toString().trim().length < 2) continue;
 
         const chrome = await chromeLauncher.launch({chromeFlags: ['--headless', '--no-sandbox']});
-        const options = {/*logLevel: 'info',*/ output: 'html', onlyCategories: ['performance'], port: chrome.port};
+        const options = {/*logLevel: 'info',*/
+            output: 'html',
+            onlyCategories: ['performance'],
+            port: chrome.port,
+            formFactor: 'desktop',
+            throttling: constants.throttling.desktopDense4G,
+            screenEmulation: constants.screenEmulationMetrics.desktop,
+            emulatedUserAgent: constants.userAgents.desktop,
+        };
         const runnerResult = await lighthouse(url, options);
 
         // `.report` is the HTML report as a string
@@ -99,7 +109,7 @@ const lighthouseCheck = async ({data, newReport = true}) => {
             scoresArray.forEach(el => Object.entries(el).forEach(([key, val]) => formattedResult += `\n${showNUnderscore(key.length + 6 + key.length * 0.1)}\nSite: ${key}\nScore: ${val['score']} \nfirstContentfulPaint: ${parseFloat(val['firstContentfulPaint'])}s \nlargestContentfulPaint: ${parseFloat(val['largestContentfulPaint'])}s \nspeedIndex: ${parseFloat(val['speedIndex'])}s \ncumulativeLayoutShift: ${parseFloat(val['cumulativeLayoutShift'])}\n`))
 
             console.log("\n" + formattedResult)
-            fs.writeFileSync(`./${OUTPUT_DIRECTORY_NAME}/report.txt`, formattedResult);
+            fs.writeFileSync(`./${OUTPUT_DIRECTORY_NAME}/report${dirName}.txt`, formattedResult);
             break;
         }
         case "json": {
@@ -119,6 +129,8 @@ const lighthouseCheck = async ({data, newReport = true}) => {
 
 const data = readFile('./urls.txt');
 const showNUnderscore = n => '_'.repeat(n)
+
+// console.log(process.argv)
 
 lighthouseCheck({data, newReport: GENERATE_NEW_REPORT}).then(() => {
     console.log('done')
