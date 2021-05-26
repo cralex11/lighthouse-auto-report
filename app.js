@@ -15,9 +15,22 @@ const OUTPUT_DIRECTORY_NAME = 'reports';
 const OUTPUT_OPTION = 'txt';
 //----------------------------------------------------------
 
+const isMobile = !process.argv.includes('desktop');
+
 const date = new Date();
 const dirName = `${date.getHours()}H_${date.getMinutes()}M_${date.getDate()}D_${date.getMonth()}M_${date.getFullYear()}Y`.toLowerCase();
 let index = 1;
+
+
+let options = (!isMobile && {/*logLevel: 'info',*/
+    output: 'html',
+    onlyCategories: ['performance'],
+    formFactor: 'desktop',
+    throttling: constants.throttling.desktopDense4G,
+    screenEmulation: constants.screenEmulationMetrics.desktop,
+    emulatedUserAgent: constants.userAgents.desktop,
+}) || {/*logLevel: 'info',*/ output: 'html', onlyCategories: ['performance']};
+
 
 //--------------------------
 //Functions
@@ -26,9 +39,9 @@ const readFile = (filePath) => {
     return fs.readFileSync(filePath, 'utf8').split(process.platform === "win32" ? '\r\n' : '\n');
 }
 
-const checkFileName = (fileName)=>{
+const checkFileName = (fileName) => {
     if (fs.existsSync(`./${OUTPUT_DIRECTORY_NAME}/report${fileName}.txt`))
-        return checkFileName(fileName+generateString(2));
+        return checkFileName(fileName + generateString(2));
     return fileName
 
 }
@@ -60,15 +73,7 @@ const lighthouseCheck = async ({data, newReport = true}) => {
         if (url.toString().trim().length < 2) continue;
 
         const chrome = await chromeLauncher.launch({chromeFlags: ['--headless', '--no-sandbox']});
-        const options = {/*logLevel: 'info',*/
-            output: 'html',
-            onlyCategories: ['performance'],
-            port: chrome.port,
-            formFactor: 'desktop',
-            throttling: constants.throttling.desktopDense4G,
-            screenEmulation: constants.screenEmulationMetrics.desktop,
-            emulatedUserAgent: constants.userAgents.desktop,
-        };
+        options.port = chrome.port;
         const runnerResult = await lighthouse(url, options);
 
         // `.report` is the HTML report as a string
@@ -117,15 +122,15 @@ const lighthouseCheck = async ({data, newReport = true}) => {
     // console.log(formattedDate)
     switch (OUTPUT_OPTION) {
         case "txt": {
-            let formattedResult = '';
+            let formattedResult = `${showNUnderscore(5)} ${isMobile ? "Mobile Testing" : "Desktop Testing"} ${showNUnderscore(5)}`;
             scoresArray.forEach(el => Object.entries(el).forEach(([key, val]) => formattedResult += `\n${showNUnderscore(key.length + 6 + key.length * 0.1)}\nSite: ${key}\nScore: ${val['score']} \nfirstContentfulPaint: ${parseFloat(val['firstContentfulPaint'])}s \nlargestContentfulPaint: ${parseFloat(val['largestContentfulPaint'])}s \nspeedIndex: ${parseFloat(val['speedIndex'])}s \ncumulativeLayoutShift: ${parseFloat(val['cumulativeLayoutShift'])}\n`))
 
             console.log("\n" + formattedResult)
 
 
-
             let txtFileName = checkFileName(dirName);
-            console.log(txtFileName)
+
+            console.log("File Name: " + txtFileName)
 
             fs.writeFileSync(`./${OUTPUT_DIRECTORY_NAME}/report${txtFileName}.txt`, formattedResult);
             break;
@@ -148,8 +153,9 @@ const lighthouseCheck = async ({data, newReport = true}) => {
 const data = readFile('./urls.txt');
 const showNUnderscore = n => '_'.repeat(n)
 
+console.log(!isMobile ? 'Desktop testing\n' : 'Mobile testing\n');
 
 lighthouseCheck({data, newReport: GENERATE_NEW_REPORT}).then(() => {
-    console.log('done')
+    console.log(showNUnderscore(4) + "Success" + showNUnderscore(4))
 }).catch(err => console.log(err));
 
