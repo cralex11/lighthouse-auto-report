@@ -1,19 +1,18 @@
 const fs = require('fs');
 
-const {generateString} = require('./utils/utils.js')
+const {isMobile, output_options} = require('./utils/constants.js')
+const {showNUnderscore} = require('./utils/utils')
+const {lighthouseCheck} = require('./utils/lighthouseCheck.js')
 
 
 //config
 const GENERATE_NEW_REPORT = true;
 const OUTPUT_DIRECTORY_NAME = 'reports';
-//All options: json, txt, html
+//All options: json, txt, html, csv
 //For this option GENERATE_NEW_REPORT should be true!!!
-const OUTPUT_OPTION = 'json';
-//----------------------------------------------------------
+const OUTPUT_OPTION = process.argv.find(el => output_options.includes(el) && el)||'csv';
 
-const {isMobile} = require('./utils/constants.js')
-const {showNUnderscore} = require('./utils/utils')
-const {lighthouseCheck} = require('./utils/lighthouseCheck.js')
+//----------------------------------------------------------
 
 
 //--------------------------

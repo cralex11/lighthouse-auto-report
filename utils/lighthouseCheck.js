@@ -3,6 +3,8 @@ const lighthouse = require('lighthouse');
 const chromeLauncher = require('chrome-launcher');
 const fs = require('fs');
 
+const converter = require('json-2-csv')
+
 const {isMobile} = require('./constants.js');
 const constants = require('lighthouse/lighthouse-core/config/constants')
 const {checkFileName, showNUnderscore} = require('./utils')
@@ -39,7 +41,7 @@ exports.lighthouseCheck = async ({data, OUTPUT_OPTION, OUTPUT_DIRECTORY_NAME, ne
         }
 
     //check and create html folder for reports
-    if (OUTPUT_OPTION === 'html' || OUTPUT_OPTION === 'csv') {
+    if (OUTPUT_OPTION === 'html') {
         if (!fs.existsSync(`./reports`))
             fs.mkdirSync(`./reports`);
         if (!fs.existsSync(`./reports/html`))
@@ -70,14 +72,7 @@ exports.lighthouseCheck = async ({data, OUTPUT_OPTION, OUTPUT_DIRECTORY_NAME, ne
             const reportHtml = runnerResult.report;
             fs.writeFileSync(`./reports/html/${dirName}/${fileName}.html`, reportHtml);
         }
-        //check if output is cvs
-        if (OUTPUT_OPTION === 'csv') {
-            const fileName = `report_${index}`
-                || 'report';
-            index++;
-            const reportHtml = runnerResult.report;
-            fs.writeFileSync(`./reports/html/${dirName}/${fileName}.csv`, reportHtml);
-        }
+
 
         //Refract results
         const score = runnerResult.lhr.categories.performance.score * 100;
@@ -87,15 +82,26 @@ exports.lighthouseCheck = async ({data, OUTPUT_OPTION, OUTPUT_DIRECTORY_NAME, ne
         const cumulativeLayoutShift = runnerResult.lhr.audits['cumulative-layout-shift'].displayValue
 
         //Collect data
-        scoresArray.push({
-            [url]: {
-                score,
-                firstContentfulPaint,
-                largestContentfulPaint,
-                speedIndex,
-                cumulativeLayoutShift
-            }
-        });
+        if (OUTPUT_OPTION !== 'csv')
+            scoresArray.push({
+                [url]: {
+                    score,
+                    firstContentfulPaint,
+                    largestContentfulPaint,
+                    speedIndex,
+                    cumulativeLayoutShift
+                }
+            });
+        else
+            scoresArray.push({
+                "site": url,
+                score: parseFloat(score.toString()),
+                firstContentfulPaint: parseFloat(firstContentfulPaint.toString()),
+                largestContentfulPaint: parseFloat(largestContentfulPaint.toString()),
+                speedIndex: parseFloat(speedIndex.toString()),
+                cumulativeLayoutShift: parseFloat(cumulativeLayoutShift.toString())
+
+            });
 
         // `.lhr` is the Lighthouse Result as a JS object
         console.log('\n\nReport is done for', runnerResult.lhr.finalUrl);
@@ -132,13 +138,30 @@ exports.lighthouseCheck = async ({data, OUTPUT_OPTION, OUTPUT_DIRECTORY_NAME, ne
         }
         case "json": {
             jsonfile.writeFileSync(`./${OUTPUT_DIRECTORY_NAME}/report_${formattedDate}.json`, scoresArray, {space: 2/*, flag: 'a'*/});
+            converter.json2csv(scoresArray, (err, csv) => {
+                if (err) return console.log(err)
+
+                fs.writeFileSync(`./${OUTPUT_DIRECTORY_NAME}/report_${formattedDate}.csv`, csv)
+
+            }, {
+                expandArrayObjects: true
+            })
+
+
             break;
         }
 
         case "html": {
             break;
         }
-        case "cvs": {
+        case "csv": {
+
+            converter.json2csv(scoresArray, (err, csv) => {
+                if (err) return console.log(err)
+                let fileName = checkFileName({fileName: dirName, OUTPUT_DIRECTORY_NAME});
+                fs.writeFileSync(`./${OUTPUT_DIRECTORY_NAME}/report_${fileName}.csv`, csv)
+
+            })
             break;
         }
 
